@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# TEST DE LATENCE
+# Le test de latence mesure le temps de réponse du switch entre l'envoi et la réception des paquets ICMP (ping) pour évaluer la performance du réseau.
+
+
 from scapy.all import *
 import time
 
