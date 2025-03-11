@@ -2,7 +2,7 @@ from scapy.all import *
 import time
 
 # Adresse IP du switch (assume que le switch a une interface de gestion ou répond au ping)
-ip_switch = "192.168.1.1"
+ip_switch = "192.168.1.254"
 
 # Nombre de trames à envoyer
 num_trames = 100
