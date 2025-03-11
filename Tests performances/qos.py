@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+# TEST DE QOS
+# Ce script mesure la QoS (Quality of Service) en évaluant la latence, la perte de paquets et le débit d'un flux vidéo entre deux machines sur un réseau.
+
+
 import time
 import subprocess
 import scapy.all as scapy
