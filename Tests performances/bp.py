@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# TEST DE BANDE PASSANTE
+# TEST DE DEBIT
 
 # Serveur (192.168.1.1) qui écoute et reçoit des paquets de 500 Mo pendant 5 minutes, mesure la quantité de données reçues, et calcule la bande passante en Mbps.
 import socket
