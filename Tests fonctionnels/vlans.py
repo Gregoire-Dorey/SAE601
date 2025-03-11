@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# TEST DE VLANs
+# 
+
 import os
 
 vlan_id = 10  # Remplace par le VLAN que tu veux tester
