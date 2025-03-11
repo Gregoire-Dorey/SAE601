@@ -4,8 +4,7 @@
 
 from scapy.all import *
 import time
-from utils import database
-
+import database
 from scapy.layers.inet import IP, ICMP
 
 def latence(sw_name,ip):
@@ -35,7 +34,7 @@ def latence(sw_name,ip):
     average_latency = sum(latencies) / len(latencies) if latencies else 0
     print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
     average = average_latency*1000
-    return (average,sw_name)
+    return (sw_name,round(average,2))
 
-latency = latence("2960","192.168.1.254")
+latency = latence("3560","192.168.1.2")
 database.insert_in_base(latency[0],latency[1])
