@@ -5,7 +5,7 @@ import time
 ip_switch = "192.168.1.254"
 
 # Nombre de trames à envoyer
-num_trames = 100
+num_trames = 1000
 
 # Liste pour stocker les temps de réponse
 latencies = []
