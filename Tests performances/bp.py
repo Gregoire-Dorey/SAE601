@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # TEST DE BANDE PASSANTE
 
-# Serveur qui écoute et reçoit des paquets de 500 Mo pendant 5 minutes, mesure la quantité de données reçues, et calcule la bande passante en Mbps.
+# Serveur (192.168.1.1) qui écoute et reçoit des paquets de 500 Mo pendant 5 minutes, mesure la quantité de données reçues, et calcule la bande passante en Mbps.
 import socket
 import time
 
@@ -42,7 +42,7 @@ server_socket.close()
 
 # ----------------------------------------------------------------------------------------------------------
 
-# Client qui envoie des paquets de 500 Mo à un serveur pendant 5 minutes pour tester la bande passante.
+# Client (192.168.1.2) qui envoie des paquets de 500 Mo à un serveur pendant 5 minutes pour tester la bande passante.
 import socket
 import time
 
