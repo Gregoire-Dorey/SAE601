@@ -1,13 +1,16 @@
-#!/usr/bin/env python3
 # TEST DE LATENCE
 # Le test de latence mesure le temps de réponse du switch entre l'envoi et la réception des paquets ICMP (ping) pour évaluer la performance du réseau.
 
 from scapy.all import *
 import time
-import database
 from scapy.layers.inet import IP, ICMP
+from tkinter import *
+import database
+import perf.graph
+from perf.graph import bargraph
 
-def latence(sw_name,ip):
+
+def latence(sw_name,ip,win,pg):
     # Adresse IP du switch (assume que le switch a une interface de gestion ou répond au ping)
     ip_switch = ip
 
@@ -26,15 +29,21 @@ def latence(sw_name,ip):
         if response:
             latency = end_time - start_time
             latencies.append(latency)
+            pg.step(0.39)
+            win.update()
             print(f"Trame {i + 1}: Latence = {latency * 1000:.2f} ms")
         else:
             print(f"Trame {i + 1}: Pas de réponse")
 
     # Statistiques de latence
     average_latency = sum(latencies) / len(latencies) if latencies else 0
-    print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
-    average = average_latency*1000
-    return (sw_name,round(average,2))
+    def graph():
+        database.insert_in_base(sw_name,average_latency*1000)
+        bargraph(database.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
+    label = Label(win, text=f"\nLatence moyenne: {average_latency * 1000:.2f} ms", fg="gray")
+    label.place(x=200,y=180)
+    button = Button(win, text="Afficher le graph", width=15, command=graph)
+    button.place(x=60, y=200)
+    win.update()
+    #return (sw_name,round(average,2))
 
-latency = latence("3560","192.168.1.2")
-database.insert_in_base(latency[0],latency[1])
