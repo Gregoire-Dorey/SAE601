@@ -5,7 +5,7 @@
 from scapy.all import *
 
 # Adresse IP cible
-target_ip = "192.168.1.1"
+target_ip = "192.168.111.175"
 
 # Nombre de paquets à envoyer
 num_packets = 10000
