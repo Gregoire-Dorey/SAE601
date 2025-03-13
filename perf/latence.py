@@ -33,7 +33,8 @@ def latence(sw_name,ip,win,pg):
             win.update()
             print(f"Trame {i + 1}: Latence = {latency * 1000:.2f} ms")
         else:
-            print(f"Trame {i + 1}: Pas de réponse")
+            latencies.append(1000)
+            print(f"Trame {i + 1}: Pas de réponse, latence fixée à 1s ")
 
     # Statistiques de latence
     average_latency = sum(latencies) / len(latencies) if latencies else 0
