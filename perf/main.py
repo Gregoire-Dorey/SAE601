@@ -1,7 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 import latence as ltc
-
+import graph as grph
+import database as db
 
 def latency():
     latency_win = Tk()
@@ -36,4 +37,6 @@ def launch():
     button.place(x=85, y=75)
     main.mainloop()
 
-launch()
+#launch()
+grph.bargraph(db.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
+ltc.latence("charge_9200","192.168.111.175")
