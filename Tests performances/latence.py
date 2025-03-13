@@ -13,6 +13,7 @@ num_trames = 1000
 
 # Liste pour stocker les temps de réponse
 latencies = []
+no_response_count = 0  # Compteur pour les "pas de réponse"
 
 for i in range(num_trames):
     # Envoi d'une trame et mesure du temps
@@ -26,7 +27,13 @@ for i in range(num_trames):
         print(f"Trame {i+1}: Latence = {latency * 1000:.2f} ms")
     else:
         print(f"Trame {i+1}: Pas de réponse")
+        no_response_count += 1
+        latencies.append(None)  # On ajoute None ou un autre indicateur pour les "pas de réponse"
 
-# Statistiques de latence
-average_latency = sum(latencies) / len(latencies) if latencies else 0
-print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
+# Calcul de la latence moyenne en excluant les "pas de réponse"
+valid_latencies = [latency for latency in latencies if latency is not None]
+average_latency = sum(valid_latencies) / len(valid_latencies) if valid_latencies else 0
+
+# Affichage des résultats
+print(f"\nLatence moyenne (sans 'pas de réponse') : {average_latency * 1000:.2f} ms")
+print(f"Nombre de 'pas de réponse' : {no_response_count}")
