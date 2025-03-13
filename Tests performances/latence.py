@@ -5,6 +5,8 @@
 from scapy.all import *
 import time
 
+from scapy.layers.inet import IP, ICMP
+
 # Adresse IP du switch (assume que le switch a une interface de gestion ou répond au ping)
 ip_switch = "192.168.111.175"
 
