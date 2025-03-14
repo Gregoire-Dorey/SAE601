@@ -5,8 +5,8 @@ from scapy.all import *
 import time
 from scapy.layers.inet import IP, ICMP
 from tkinter import *
-import database as db
-import graph as grph
+import perf.database as db
+import perf.graph as grph
 #from perf.graph import bargraph
 
 
