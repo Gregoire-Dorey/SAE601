@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Monitoring Réseau</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='monitoring.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Monitoring de Latence</h1>
+        <p>Ce graphique affiche les données de latence collectées lors des tests.</p>
+        <div class="chart-container">
+            <canvas id="monitoringChart"></canvas>
+        </div>
+        <div class="actions">
+            <button onclick="window.location.href='/latence'">Effectuer un test</button>
+            <button onclick="window.location.href='/'">⬅ Retour</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil - Test de Réseau</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue sur le Test de Réseau</h1>
+        <p>Cet outil vous permet de tester la latence de vos équipements réseau et de suivre les résultats dans le temps.</p>
+
+        <div class="actions">
+            <button onclick="window.location.href='/latence'">🔍 Tester la Latence</button>
+            <button onclick="window.location.href='/monitoring'">📊 Monitoring Réseau</button>
+        </div>
+    </div>
+</body>
+</html>
