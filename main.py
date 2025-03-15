@@ -1,8 +1,7 @@
 from tkinter import *
 from tkinter import ttk
-import perf.latence as ltc
-import perf.graph as grph
-import perf.database as db
+import test_perf.latence as ltc
+import utils.database as db
 
 def latency():
     latency_win = Tk()
@@ -37,4 +36,5 @@ def launch():
     button.place(x=85, y=75)
     main.mainloop()
 
-launch()
+#launch()
+db.select_latency()

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import perf.database as db
+
 
 def bargraph(data,nom="",nom_x="",nom_y=""):
     x=[]

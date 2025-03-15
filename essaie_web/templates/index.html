@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue sur le Test de Réseau</h1>
+        <button onclick="window.location.href='/latence'">🔍 Tester la Latence</button>
+        <button onclick="window.location.href='/monitoring'">📊 Monitoring Réseau</button>
+    </div>
+</body>
+</html>
