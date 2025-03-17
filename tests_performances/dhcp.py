@@ -49,13 +49,6 @@ for i in range(1000):
     # Créer la demande DHCP avec la nouvelle adresse MAC
     packet = create_dhcp_discover(src_mac)
 
-    # Afficher ce que l'on envoie (adresse MAC et le paquet)
-    print(f"Envoi de la demande DHCP avec l'adresse MAC {src_mac} ({i+1}/1000):")
-    packet.show()  # Affiche le paquet Scapy pour vérifier sa structure
-
     # Envoyer le paquet
-    sendp(packet, iface="eth0")  # On retire "verbose=False" pour voir ce que fait Scapy
-
+    sendp(packet, iface="eth0", verbose=False)  # Assure-toi de spécifier l'interface réseau correcte
     time.sleep(0.01)  # Envoie un paquet toutes les 10ms pour tester sous charge
-
-print("Test terminé : 1000 demandes DHCP envoyées.")
