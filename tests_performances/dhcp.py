@@ -51,4 +51,10 @@ for i in range(1000):
 
     # Envoyer le paquet
     sendp(packet, iface="eth0", verbose=False)  # Assure-toi de spécifier l'interface réseau correcte
+
+    # Afficher ce qui se passe à chaque envoi
+    print(f"Envoi de la demande DHCP avec l'adresse MAC {src_mac} ({i+1}/1000)")
+
     time.sleep(0.01)  # Envoie un paquet toutes les 10ms pour tester sous charge
+
+print("Test terminé : 1000 demandes DHCP envoyées.")
