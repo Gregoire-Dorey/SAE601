@@ -5,7 +5,7 @@ import time
 from scapy.layers.inet import IP, UDP, TCP, ICMP
 
 # Paramètres du test
-TARGET_IP = "192.168.111.175"  # Adresse IP du switch ou d'un hôte derrière
+TARGET_IP = "192.168.99.1"  # Adresse IP du switch ou d'un hôte derrière
 PORT = 80  # Port cible pour le trafic TCP/UDP
 PACKETS_PER_PROCESS = 10000  # Nombre de paquets envoyés par process
 NUM_PROCESSES = 5  # Nombre de processus pour générer du trafic en parallèle
@@ -52,3 +52,4 @@ if __name__ == "__main__":
     start_time = time.time()
     launch_attack()
     print(f"✅ Test terminé en {time.time() - start_time:.2f} secondes")
+

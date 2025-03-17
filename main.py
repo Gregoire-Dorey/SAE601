@@ -36,5 +36,4 @@ def launch():
     button.place(x=85, y=75)
     main.mainloop()
 
-#launch()
-db.select_latency()
+launch()
