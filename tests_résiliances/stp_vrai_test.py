@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # TEST DE STP
+# Envoie un grand nombre de BPDU à un switch via un port Ethernet pour tester la réactivité du protocole STP sous charge
+
 
 from scapy.all import *
 from scapy.layers.l2 import Ether, Dot3
