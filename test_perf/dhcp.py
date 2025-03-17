@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+import binascii
+
 from scapy.all import *
 import time
 import argparse
 import sys
 import os
 
-from scapy.arch import get_windows_if_list
 from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
@@ -13,51 +14,38 @@ from scapy.layers.l2 import Ether
 
 def measure_dhcp_time(interface=None):
     """
-    Mesure le temps nécessaire pour obtenir une adresse IP via DHCP sous Windows.
+    Mesure le temps nécessaire pour obtenir une adresse IP via DHCP sous Linux.
 
     Args:
-        interface (str): Nom de l'interface réseau ou son index
+        interface (str): Interface réseau à utiliser (ex: eth0, wlan0)
 
     Returns:
         dict: Résultats contenant les temps pour chaque étape du processus DHCP
     """
-    # Sous Windows, on doit utiliser une approche différente pour les interfaces
+    # Vérifier si l'interface existe
     if interface is None:
         print("Interfaces réseau disponibles:")
-        for i, iface in enumerate(get_windows_if_list()):
-            print(f"{i}: {iface['name']} ({iface['description']})")
+        for iface in get_if_list():
+            # Ignore l'interface loopback
+            if iface != "lo":
+                print(f"- {iface}")
 
-        print("\nVeuillez spécifier l'index de l'interface avec l'option -i")
+        print("\nVeuillez spécifier une interface avec l'option -i")
         return None
 
-    # Obtenir l'interface par son index ou nom
-    if interface.isdigit():
-        iface_index = int(interface)
-        all_ifaces = get_windows_if_list()
-        if iface_index >= len(all_ifaces):
-            print(f"Erreur: L'index d'interface {iface_index} est invalide")
-            return None
-        iface = all_ifaces[iface_index]
-        iface_name = iface['name']
-    else:
-        iface_name = interface
+    # Vérifier si l'interface spécifiée existe
+    if interface not in get_if_list():
+        print(f"Erreur: L'interface {interface} n'existe pas")
+        return None
 
-    print(f"Démarrage de la mesure DHCP sur l'interface: {iface_name}")
+    print(f"Démarrage de la mesure DHCP sur l'interface {interface}")
 
     # Obtenir l'adresse MAC de l'interface
-    try:
-        mac_address = None
-        for iface in get_windows_if_list():
-            if iface['name'] == iface_name:
-                mac_address = iface['mac']
-                break
+    mac_address = get_if_hwaddr(interface)
+    print(f"Adresse MAC de l'interface: {mac_address}")
 
-        if not mac_address:
-            print(f"Erreur: Impossible de trouver l'adresse MAC pour l'interface {iface_name}")
-            return None
-    except Exception as e:
-        print(f"Erreur lors de la récupération de l'adresse MAC: {str(e)}")
-        return None
+    # Convertir l'adresse MAC en format brut pour le champ BOOTP
+    mac_raw = mac_address.replace(':', '')
 
     # Stockage des temps pour chaque étape
     timing = {
@@ -79,7 +67,7 @@ def measure_dhcp_time(interface=None):
         'lease_time': None
     }
 
-    # Variable pour stocker l'ID de transaction DHCP
+    # Générer un identifiant de transaction aléatoire
     xid_value = random.randint(1, 0xFFFFFFFF)
 
     # Fonction pour gérer les paquets reçus
@@ -111,15 +99,19 @@ def measure_dhcp_time(interface=None):
 
                 # Envoi d'un DHCP Request
                 timing['request_sent'] = time.time()
+
+                # Transformer l'adresse MAC en format binaire pour le champ chaddr
+                mac_bytes = binascii.unhexlify(mac_raw)
+
                 dhcp_request = Ether(dst="ff:ff:ff:ff:ff:ff", src=mac_address) / \
                                IP(src="0.0.0.0", dst="255.255.255.255") / \
                                UDP(sport=68, dport=67) / \
-                               BOOTP(chaddr=mac_address.replace(':', ''), xid=xid_value) / \
+                               BOOTP(chaddr=mac_bytes, xid=xid_value, flags=0x8000) / \
                                DHCP(options=[('message-type', 'request'),
                                              ('requested_addr', dhcp_info['offered_ip']),
                                              ('server_id', dhcp_info['server_id']),
                                              'end'])
-                sendp(dhcp_request, iface=iface_name, verbose=0)
+                sendp(dhcp_request, iface=interface, verbose=0)
                 print(f"DHCP REQUEST envoyé pour {dhcp_info['offered_ip']}")
 
             # DHCP ACK (5)
@@ -134,7 +126,7 @@ def measure_dhcp_time(interface=None):
                             dhcp_info['subnet_mask'] = option[1]
                         elif option[0] == 'router':
                             dhcp_info['router'] = option[1]
-                        elif option[0] == 'name_server':
+                        elif option[0] == 'name_server' or option[0] == 'domain_name_server':
                             dhcp_info['dns'] = option[1]
                         elif option[0] == 'lease_time':
                             dhcp_info['lease_time'] = option[1]
@@ -148,21 +140,21 @@ def measure_dhcp_time(interface=None):
 
     # Démarrer l'écoute en arrière-plan
     sniff_filter = "udp and (port 67 or port 68)"
-    sniff_thread = AsyncSniffer(iface=iface_name, filter=sniff_filter, prn=dhcp_callback)
+    sniff_thread = AsyncSniffer(iface=interface, filter=sniff_filter, prn=dhcp_callback)
     sniff_thread.start()
 
-    # Créer un DHCP Discover avec l'adresse MAC convertie en format approprié
-    mac_bytes = mac_address.replace(':', '')
+    # Transformation de l'adresse MAC en format binaire pour le champ chaddr
+    mac_bytes = binascii.unhexlify(mac_raw)
 
     # Envoyer un DHCP Discover
     dhcp_discover = Ether(dst="ff:ff:ff:ff:ff:ff", src=mac_address) / \
                     IP(src="0.0.0.0", dst="255.255.255.255") / \
                     UDP(sport=68, dport=67) / \
-                    BOOTP(chaddr=mac_bytes, xid=xid_value) / \
+                    BOOTP(chaddr=mac_bytes, xid=xid_value, flags=0x8000) / \
                     DHCP(options=[('message-type', 'discover'), 'end'])
 
     timing['discover_sent'] = time.time()
-    sendp(dhcp_discover, iface=iface_name, verbose=0)
+    sendp(dhcp_discover, iface=interface, verbose=0)
     print("DHCP DISCOVER envoyé")
 
     # Attendre la fin du processus DHCP (max 30 secondes)
@@ -175,6 +167,11 @@ def measure_dhcp_time(interface=None):
 
     # Arrêter la capture si pas terminée
     sniff_thread.stop()
+
+    # Vérifier si le processus a été interrompu
+    if timing['ack_received'] is None:
+        print(f"Aucune réponse DHCP reçue après {timeout} secondes")
+        return None
 
     # Calculer les temps et préparer le rapport
     results = {
@@ -192,58 +189,49 @@ def measure_dhcp_time(interface=None):
 
 
 if __name__ == "__main__":
-    # Vérifier si on est sur Windows
-    if not sys.platform.startswith('win'):
-        print("Ce script est conçu pour Windows. Pour les autres systèmes, utilisez la version standard.")
+    # Vérifier si on est sous Linux
+    if not sys.platform.startswith('linux'):
+        print("Ce script est conçu pour Linux. Pour les autres systèmes, utilisez la version appropriée.")
         sys.exit(1)
 
-    # Vérifier les privilèges administrateur
-    try:
-        is_admin = os.environ.get('ADMINISTRATOR') == '1' or os.environ.get(
-            'COMPUTERNAME') is not None and ctypes.windll.shell32.IsUserAnAdmin() != 0
-        if not is_admin:
-            print("Attention: Ce script nécessite des privilèges administrateur pour capturer les paquets réseau.")
-            print("Veuillez relancer ce script en tant qu'administrateur.")
-            sys.exit(1)
-    except:
-        print("Impossible de vérifier les privilèges administrateur.")
-        print("Veuillez vous assurer d'exécuter ce script en tant qu'administrateur.")
+    # Vérifier les privilèges root
+    if os.geteuid() != 0:
+        print("Ce script nécessite des privilèges root pour capturer les paquets réseau.")
+        print("Veuillez relancer avec sudo.")
+        sys.exit(1)
 
     # Analyser les arguments en ligne de commande
-    parser = argparse.ArgumentParser(description='Mesure du temps d\'obtention d\'une adresse IP via DHCP sous Windows')
-    parser.add_argument('-i', '--interface', help='Interface réseau à utiliser (index ou nom)')
+    parser = argparse.ArgumentParser(description='Mesure du temps d\'obtention d\'une adresse IP via DHCP sous Linux')
+    parser.add_argument('-i', '--interface', help='Interface réseau à utiliser (ex: eth0, wlan0)')
     parser.add_argument('-l', '--list', action='store_true', help='Lister les interfaces réseau disponibles')
 
     args = parser.parse_args()
 
     if args.list:
         print("Interfaces réseau disponibles:")
-        for i, iface in enumerate(get_windows_if_list()):
-            print(f"{i}: {iface['name']} ({iface['description']})")
+        for iface in get_if_list():
+            if iface != "lo":  # Ignorer l'interface loopback
+                print(f"- {iface}")
         sys.exit(0)
 
     try:
-        if args.interface:
-            results = measure_dhcp_time(args.interface)
+        results = measure_dhcp_time(args.interface)
 
-            if results and results['total_time'] is not None:
-                print("\n--- Résultats ---")
-                print(f"Temps total d'obtention d'une adresse IP: {results['total_time']:.4f} secondes")
-                print(f"Temps entre DISCOVER et OFFER: {results['discover_to_offer']:.4f} secondes")
-                print(f"Temps entre REQUEST et ACK: {results['request_to_ack']:.4f} secondes")
-                print(f"Adresse IP obtenue: {results['ip_address']}")
-                print(f"Masque de sous-réseau: {results['subnet_mask']}")
-                print(f"Routeur: {results['router']}")
-                print(f"Serveurs DNS: {results['dns']}")
-                print(f"Durée du bail: {results['lease_time']} secondes")
-            elif results is None:
-                print("Veuillez spécifier une interface réseau avec l'option -i")
-            else:
-                print("Échec de l'obtention d'une adresse IP via DHCP (timeout).")
-        else:
-            measure_dhcp_time()  # Affichera la liste des interfaces
+        if results:
+            print("\n--- Résultats de la mesure DHCP ---")
+            print(f"Temps total d'obtention d'une adresse IP: {results['total_time']:.4f} secondes")
+            print(f"Temps entre DISCOVER et OFFER: {results['discover_to_offer']:.4f} secondes")
+            print(f"Temps entre REQUEST et ACK: {results['request_to_ack']:.4f} secondes")
+            print("\n--- Informations de configuration réseau ---")
+            print(f"Adresse IP obtenue: {results['ip_address']}")
+            print(f"Masque de sous-réseau: {results['subnet_mask']}")
+            print(f"Routeur: {results['router']}")
+            print(f"Serveurs DNS: {results['dns']}")
+            print(f"Durée du bail: {results['lease_time']} secondes")
     except Exception as e:
         print(f"Erreur lors de l'exécution du script: {str(e)}")
-        print("Note: Ce script nécessite les privilèges administrateur et la bibliothèque Scapy.")
-        print("Installation: pip install scapy")
-        print("Exécution: Démarrer une invite de commande en tant qu'administrateur")
+        print("Des problèmes courants peuvent être:")
+        print("- Permissions insuffisantes (utilisez sudo)")
+        print("- Interface réseau non disponible")
+        print("- Problèmes de drivers réseau")
+        print("- Bibliothèque Scapy mal installée")
