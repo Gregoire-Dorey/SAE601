@@ -1,37 +1,126 @@
 #!/usr/bin/env python3
-# TEST DE STP via une adresse IP
-# Envoie un grand nombre de BPDUs via des paquets IP pour tester la réactivité du protocole STP sous charge
-
 from scapy.all import *
-from scapy.layers.l2 import Ether
-from scapy.layers.inet import IP, UDP
-from scapy.layers.l2 import Dot3
+import time
+import statistics
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+
+from scapy.layers.inet import IP, ICMP
+from scapy.layers.l2 import Ether, LLC, STP
 
 
-# Fonction pour créer un paquet BPDU encapsulé dans un paquet IP
-def create_bpdu(src_mac, dest_ip, dest_mac, vlan_id):
-    # Construction de l'en-tête Ethernet
-    eth = Ether(src=src_mac, dst=dest_mac)
+# Configuration des paramètres STP pour les BPDU
+class STPTest:
+    def __init__(self, target_ip, interface, count=1000, threads=10, timeout=2):
+        self.target_ip = target_ip
+        self.interface = interface
+        self.count = count
+        self.threads = threads
+        self.timeout = timeout
+        self.latencies = []
 
-    # Création d'un paquet IP encapsulant les BPDUs
-    ip = IP(src="0.0.0.0", dst=dest_ip)  # Adresse source 0.0.0.0 (source inconnue en DHCP, typique des BPDUs)
+    def create_bpdu(self):
+        # Création d'un BPDU STP standard
+        eth = Ether(dst="01:80:c2:00:00:00")  # Adresse MAC STP multicast
+        llc = LLC(dsap=0x42, ssap=0x42, ctrl=3)
+        stp = STP(
+            proto=0,  # Protocol ID (0 pour STP)
+            version=0,  # Version (0 pour STP)
+            bpdutype=0,  # BPDU Type (0 pour Configuration BPDU)
+            bpduflags=0,  # Flags (0 pour root bridge)
+            rootid=0x8001,  # Root Bridge Priority + ID
+            rootmac="00:11:22:33:44:55",
+            pathcost=0,  # Root Path Cost
+            bridgeid=0x8002,  # Bridge Priority + ID
+            bridgemac="00:11:22:33:44:66",
+            portid=0x8003,  # Port ID
+            age=0,  # Message Age (en secondes)
+            maxage=20,  # Max Age (en secondes)
+            hellotime=2,  # Hello Time (en secondes)
+            fwddelay=15  # Forward Delay (en secondes)
+        )
+        return eth / llc / stp
 
-    # Création de la trame STP (BPDU) encapsulée dans un paquet Dot3
-    bpdu = Dot3(type=0x0000) / Raw(load=b'\x00' * 35)  # Structure minimale du BPDU (charge utile de 35 octets)
+    def send_bpdu_and_measure(self, i):
+        # Envoie un BPDU et mesure le temps de réponse
+        bpdu_packet = self.create_bpdu()
 
-    # Combinaison des trois : Ethernet, IP, et le BPDU
-    packet = eth / ip / bpdu
-    return packet
+        # Ajouter ICMP Echo Request pour mesurer la latence
+        ip = IP(dst=self.target_ip)
+        icmp = ICMP(type=8, code=0, id=i)
+        data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" * 2
+        ping_packet = ip / icmp / data
+
+        start_time = time.time()
+
+        # Envoyer d'abord le BPDU pour ajouter de la charge
+        sendp(bpdu_packet, iface=self.interface, verbose=0)
+
+        # Puis mesurer la latence avec ICMP
+        reply = sr1(ping_packet, timeout=self.timeout, verbose=0)
+
+        end_time = time.time()
+
+        if reply is not None and reply.haslayer(ICMP) and reply[ICMP].type == 0:
+            latency = (end_time - start_time) * 1000  # en ms
+            return latency
+        return None
+
+    def run_test(self):
+        print(f"Test de charge STP sur {self.target_ip} via {self.interface}")
+        print(f"Envoi de {self.count} BPDU avec {self.threads} threads en parallèle")
+
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+            results = list(executor.map(self.send_bpdu_and_measure, range(self.count)))
+
+        # Filtrer les None (timeouts)
+        self.latencies = [lat for lat in results if lat is not None]
+        successful_responses = len(self.latencies)
+
+        # Calculer les statistiques
+        if successful_responses > 0:
+            min_latency = min(self.latencies)
+            max_latency = max(self.latencies)
+            avg_latency = sum(self.latencies) / successful_responses
+            median_latency = statistics.median(self.latencies)
+            stddev_latency = statistics.stdev(self.latencies) if successful_responses > 1 else 0
+
+            print("\nRésultats du test:")
+            print(f"Paquets envoyés: {self.count}")
+            print(f"Réponses reçues: {successful_responses} ({successful_responses / self.count * 100:.2f}%)")
+            print(f"Latence minimale: {min_latency:.2f} ms")
+            print(f"Latence maximale: {max_latency:.2f} ms")
+            print(f"Latence moyenne: {avg_latency:.2f} ms")
+            print(f"Latence médiane: {median_latency:.2f} ms")
+            print(f"Écart-type: {stddev_latency:.2f} ms")
+
+            # Sauvegarder les résultats dans un fichier
+            with open(f"stp_test_{self.target_ip.replace('.', '_')}.csv", "w") as f:
+                f.write("index,latency_ms\n")
+                for i, latency in enumerate(self.latencies):
+                    f.write(f"{i},{latency:.2f}\n")
+
+            print(f"\nRésultats détaillés sauvegardés dans stp_test_{self.target_ip.replace('.', '_')}.csv")
+        else:
+            print("Aucune réponse reçue pendant le test.")
 
 
-# Paramètres de test
-src_mac = "00:11:22:33:44:55"  # Adresse MAC source (peut être changée)
-dest_ip = "192.168.1.1"  # Adresse IP du switch (exemple : changer avec l'adresse de ton switch)
-dest_mac = "01:80:C2:00:00:00"  # Adresse MAC de destination pour les BPDUs STP (adresse multicast STP)
-vlan_id = 1  # Identifiant VLAN (optionnel, en fonction du scénario)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Test de charge STP avec mesure de latence")
+    parser.add_argument("-t", "--target", required=True, help="Adresse IP du switch cible")
+    parser.add_argument("-i", "--interface", required=True, help="Interface réseau à utiliser")
+    parser.add_argument("-c", "--count", type=int, default=1000, help="Nombre de BPDU à envoyer")
+    parser.add_argument("-p", "--parallel", type=int, default=10, help="Nombre de threads en parallèle")
+    parser.add_argument("-o", "--timeout", type=float, default=2.0, help="Timeout pour les réponses (secondes)")
 
-# Envoi de 1000 BPDUs à une fréquence de 1 seconde
-for i in range(1000):
-    packet = create_bpdu(src_mac, dest_ip, dest_mac, vlan_id)
-    sendp(packet, iface="eth0", verbose=False)  # Assure-toi de spécifier l'interface réseau correcte
-    time.sleep(0.01)  # Envoie un BPDU toutes les 10ms pour tester sous charge
+    args = parser.parse_args()
+
+    test = STPTest(
+        target_ip=args.target,
+        interface=args.interface,
+        count=args.count,
+        threads=args.parallel,
+        timeout=args.timeout
+    )
+
+    test.run_test()
