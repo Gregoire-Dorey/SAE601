@@ -1,77 +1,94 @@
-import os
-import csv
 import argparse
+import time
+import csv
+import os
+import threading
 import matplotlib.pyplot as plt
+from scapy.all import *
+from scapy.layers.dhcp import BOOTP, DHCP
+from scapy.layers.inet import IP, UDP
+from scapy.layers.l2 import Ether
 
 
-class DHCPBenchmark:
-    def __init__(self, server_ip, port, concurrent_clients, test_duration, incremental=False, max_clients=None,
-                 increment_step=5, increment_interval=10):
-        self.server_ip = server_ip
-        self.port = port
-        self.concurrent_clients = concurrent_clients
-        self.test_duration = test_duration
-        self.incremental = incremental
-        self.max_clients = max_clients
-        self.increment_step = increment_step
-        self.increment_interval = increment_interval
+# Fonction pour envoyer une requête DHCP DISCOVER et mesurer le temps de réponse
+def dhcp_request(server_ip, results, index):
+    conf.checkIPaddr = False
+    iface = conf.iface  # Utiliser l'interface par défaut
+    dhcp_discover = Ether(dst="ff:ff:ff:ff:ff:ff") / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68,
+                                                                                                    dport=67) / BOOTP(
+        op=1, chaddr=RandMAC()) / DHCP(options=[("message-type", "discover"), "end"])
+    start_time = time.time()
+    sendp(dhcp_discover, iface=iface, verbose=False)
 
-    def run_benchmark(self):
-        # Simulation de l'exécution du benchmark DHCP
-        report = {
-            "server_ip": self.server_ip,
-            "concurrent_clients": self.concurrent_clients,
-            "test_duration_seconds": self.test_duration,
-            "total_requests": 1000,
-            "successful_responses": 950,
-            "failed_requests": 50,
-            "success_rate_percent": 95.0,
-            "requests_per_second": 33.3,
-            "avg_response_time_ms": 15.2,
-            "min_response_time_ms": 10.1,
-            "max_response_time_ms": 30.5,
-            "standard_deviation_ms": 5.6,
-            "percentile_50th_ms": 14.0,
-            "percentile_90th_ms": 25.0,
-            "percentile_99th_ms": 29.0,
-            "error_details": {"Timeout": 30, "No Response": 20},
-            "incremental_results": {},
-            "response_time_bins": self.create_histogram_bins([10, 12, 15, 18, 20, 22, 25, 30], 5),
-        }
-        return report
+    def dhcp_response(pkt):
+        return pkt.haslayer(DHCP) and pkt[DHCP].options[0][1] == 2  # DHCP OFFER
 
-    def create_histogram_bins(self, response_times, num_bins=10):
-        if not response_times:
-            return {}
+    pkt = sniff(filter="udp and (port 67 or port 68)", iface=iface, timeout=5, count=1, lfilter=dhcp_response)
+    end_time = time.time()
 
-        min_time, max_time = min(response_times), max(response_times)
-        bin_width = (max_time - min_time) / num_bins if max_time > min_time else 1
-        bins = {}
-
-        for i in range(num_bins):
-            lower = min_time + i * bin_width
-            upper = lower + bin_width
-            label = f"{lower:.2f}-{upper:.2f}"
-            count = sum(1 for t in response_times if lower <= t < upper)
-            bins[label] = count
-
-        bins[list(bins.keys())[-1]] += sum(1 for t in response_times if t == max_time)
-        return bins
+    if pkt:
+        results[index] = end_time - start_time
+    else:
+        results[index] = None  # Pas de réponse reçue
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Benchmark DHCP avec analyse des temps de réponse')
-    parser.add_argument('--server', '-s', required=True, help='Adresse IP du serveur DHCP')
-    parser.add_argument('--port', '-p', type=int, default=67, help='Port du serveur DHCP')
-    parser.add_argument('--clients', '-c', type=int, default=10, help='Nombre de clients concurrents')
-    parser.add_argument('--duration', '-d', type=int, default=30, help='Durée du test en secondes')
-    args = parser.parse_args()
+def benchmark_dhcp(server_ip, num_clients, duration, save_csv, graphs):
+    results = []
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        latencies = [None] * num_clients
+        threads = []
+        for i in range(num_clients):
+            thread = threading.Thread(target=dhcp_request, args=(server_ip, latencies, i))
+            threads.append(thread)
+            thread.start()
 
-    print(f"Démarrage du benchmark DHCP sur {args.server}:{args.port}")
-    benchmark = DHCPBenchmark(args.server, args.port, args.clients, args.duration)
-    report = benchmark.run_benchmark()
-    print(report)
+        for thread in threads:
+            thread.join()
+
+        latencies = [lat for lat in latencies if lat is not None]  # Exclure les requêtes sans réponse
+        avg_latency = sum(latencies) / len(latencies) if latencies else float('inf')
+        results.append(avg_latency)
+        print(f"Latence moyenne : {avg_latency:.4f} s")
+        time.sleep(1)
+
+    if save_csv:
+        save_results_to_csv(results)
+    if graphs:
+        generate_graph(results)
+
+
+def save_results_to_csv(results):
+    os.makedirs("benchmark_results", exist_ok=True)
+    file_path = "benchmark_results/dhcp_benchmark.csv"
+    with open(file_path, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Test", "Latence moyenne (s)"])
+        for i, latency in enumerate(results):
+            writer.writerow([i + 1, latency])
+    print(f"Résultats enregistrés dans {file_path}")
+
+
+def generate_graph(results):
+    os.makedirs("benchmark_results/graphs", exist_ok=True)
+    plt.plot(results, marker="o")
+    plt.xlabel("Test")
+    plt.ylabel("Latence moyenne (s)")
+    plt.title("Benchmark DHCP")
+    plt.grid()
+    graph_path = "benchmark_results/graphs/dhcp_benchmark.png"
+    plt.savefig(graph_path)
+    plt.show()
+    print(f"Graphique enregistré dans {graph_path}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Benchmark de performances DHCP")
+    parser.add_argument("--server", required=True, help="Adresse IP du serveur DHCP à tester")
+    parser.add_argument("--clients", type=int, default=10, help="Nombre de clients à tester simultanément")
+    parser.add_argument("--duration", type=int, default=30, help="Durée du test en secondes")
+    parser.add_argument("--save-csv", action="store_true", help="Enregistrer les résultats en CSV")
+    parser.add_argument("--graphs", action="store_true", help="Générer un graphique des résultats")
+
+    args = parser.parse_args()
+    benchmark_dhcp(args.server, args.clients, args.duration, args.save_csv, args.graphs)
