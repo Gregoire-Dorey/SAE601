@@ -2,7 +2,8 @@
 from scapy.all import *
 import time
 import statistics
-from concurrent.futures import ThreadPoolExecutor
+import os
+import psutil  # Utilisation de psutil pour obtenir des noms d'interfaces lisibles
 
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import Ether, LLC, STP
@@ -10,17 +11,27 @@ from scapy.layers.l2 import Ether, LLC, STP
 # Configuration fixe
 TARGET_IP = "192.168.99.200"  # L'adresse IP de votre switch cible
 COUNT = 1000  # Nombre de BPDU à envoyer
-THREADS = 10  # Nombre de threads en parallèle
 TIMEOUT = 2  # Timeout en secondes
 
+def get_readable_interfaces():
+    """Utilisation de psutil pour obtenir les interfaces réseau sous un format lisible."""
+    interfaces = psutil.net_if_addrs()
+    readable_interfaces = [iface for iface in interfaces if iface != "lo"]  # Exclure l'interface 'lo' (loopback)
+    return readable_interfaces
 
 class STPTest:
-    def __init__(self, target_ip, count=1000, threads=10, timeout=2):
+    def __init__(self, target_ip, count=1000, timeout=2, iface="eth0"):
         self.target_ip = target_ip
         self.count = count
-        self.threads = threads
         self.timeout = timeout
         self.latencies = []
+        self.iface = iface
+
+        # Vérifier que l'interface spécifiée existe
+        if self.iface not in get_readable_interfaces():
+            raise ValueError(f"L'interface {self.iface} n'existe pas. Veuillez vérifier.")
+        else:
+            print(f"Utilisation de l'interface: {self.iface}")
 
     def create_bpdu(self):
         # Création d'un BPDU STP standard
@@ -56,29 +67,40 @@ class STPTest:
 
         start_time = time.time()
 
-        # Envoyer d'abord le BPDU pour ajouter de la charge
-        sendp(bpdu_packet, verbose=0)
+        try:
+            # Envoyer d'abord le BPDU pour ajouter de la charge
+            sendp(bpdu_packet, iface=self.iface, verbose=0)  # Envoi du BPDU sur l'interface spécifiée
 
-        # Puis mesurer la latence avec ICMP
-        reply = sr1(ping_packet, timeout=self.timeout, verbose=0)
+            # Puis mesurer la latence avec ICMP
+            reply = sr1(ping_packet, timeout=self.timeout, iface=self.iface, verbose=0)  # ICMP Echo
 
-        end_time = time.time()
+            end_time = time.time()
 
-        if reply is not None and reply.haslayer(ICMP) and reply[ICMP].type == 0:
-            latency = (end_time - start_time) * 1000  # en ms
-            return latency
+            if reply is not None and reply.haslayer(ICMP) and reply[ICMP].type == 0:
+                latency = (end_time - start_time) * 1000  # en ms
+                return latency
+        except Exception as e:
+            print(f"Erreur lors de l'envoi du paquet {i}: {e}")
+            return None
+
         return None
 
     def run_test(self):
         print(f"Test de charge STP sur {self.target_ip}")
-        print(f"Envoi de {self.count} BPDU avec {self.threads} threads en parallèle")
-        print(f"Utilisation de l'interface par défaut: {conf.iface}")
+        print(f"Envoi de {self.count} BPDU séquentiellement avec un délai de {self.timeout} secondes")
+        print(f"Utilisation de l'interface: {self.iface}")
 
-        with ThreadPoolExecutor(max_workers=self.threads) as executor:
-            results = list(executor.map(self.send_bpdu_and_measure, range(self.count)))
+        # Envoi des BPDUs séquentiellement
+        for i in range(self.count):
+            latency = self.send_bpdu_and_measure(i)
+
+            if latency is not None:
+                self.latencies.append(latency)
+                print(f"Latence pour BPDU {i + 1}: {latency:.2f} ms")
+            else:
+                print(f"Aucune réponse pour BPDU {i + 1}.")
 
         # Filtrer les None (timeouts)
-        self.latencies = [lat for lat in results if lat is not None]
         successful_responses = len(self.latencies)
 
         # Calculer les statistiques
@@ -108,16 +130,36 @@ class STPTest:
         else:
             print("Aucune réponse reçue pendant le test.")
 
+def select_interface():
+    # Liste des interfaces réseau avec des noms lisibles comme eth0, wlan0
+    interfaces = get_readable_interfaces()  # Utilisation de psutil pour obtenir des interfaces réseau lisibles
+    if not interfaces:
+        print("Aucune interface réseau disponible.")
+        exit()
+
+    print("Sélectionnez l'interface réseau:")
+    for index, iface in enumerate(interfaces):
+        print(f"{index + 1}. {iface}")
+
+    choice = int(input(f"Entrez le numéro de l'interface (1-{len(interfaces)}): "))
+    if 1 <= choice <= len(interfaces):
+        return interfaces[choice - 1]
+    else:
+        print("Choix invalide. Le script va maintenant se fermer.")
+        exit()
 
 if __name__ == "__main__":
     print("Démarrage du test de charge STP...")
 
     try:
+        # Sélection de l'interface par l'utilisateur
+        iface = select_interface()
+
         test = STPTest(
             target_ip=TARGET_IP,
             count=COUNT,
-            threads=THREADS,
-            timeout=TIMEOUT
+            timeout=TIMEOUT,
+            iface=iface
         )
 
         test.run_test()
