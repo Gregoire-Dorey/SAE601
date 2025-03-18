@@ -17,13 +17,20 @@ def dhcp_request(server_ip, results, index):
     dhcp_discover = Ether(dst="ff:ff:ff:ff:ff:ff") / IP(src="0.0.0.0", dst="255.255.255.255") / UDP(sport=68,
                                                                                                     dport=67) / BOOTP(
         op=1, chaddr=RandMAC()) / DHCP(options=[("message-type", "discover"), "end"])
+
+    print(f"Envoi de la requête DHCP DISCOVER : {dhcp_discover.show()}")  # Affiche la requête envoyée
     start_time = time.time()
     sendp(dhcp_discover, iface=iface, verbose=False)
 
     def dhcp_response(pkt):
-        return pkt.haslayer(DHCP) and pkt[DHCP].options[0][1] == 2  # DHCP OFFER
+        if pkt.haslayer(DHCP):
+            # Affichage de la réponse pour vérifier
+            print(f"Réponse DHCP reçue : {pkt[DHCP].options}")
+            return pkt[DHCP].options[0][1] == 2  # Vérifie si c'est un DHCP OFFER
+        return False
 
-    pkt = sniff(filter="udp and (port 67 or port 68)", iface=iface, timeout=5, count=1, lfilter=dhcp_response)
+    # Augmenter le timeout à 10 secondes pour donner plus de temps à la réponse
+    pkt = sniff(filter="udp", iface=iface, timeout=10, count=1, lfilter=dhcp_response)
     end_time = time.time()
 
     if pkt:
@@ -35,6 +42,7 @@ def dhcp_request(server_ip, results, index):
 def benchmark_dhcp(server_ip, num_clients, duration, save_csv, graphs):
     results = []
     start_time = time.time()
+
     while time.time() - start_time < duration:
         latencies = [None] * num_clients
         threads = []
@@ -47,7 +55,11 @@ def benchmark_dhcp(server_ip, num_clients, duration, save_csv, graphs):
             thread.join()
 
         latencies = [lat for lat in latencies if lat is not None]  # Exclure les requêtes sans réponse
-        avg_latency = sum(latencies) / len(latencies) if latencies else float('inf')
+        if latencies:
+            avg_latency = sum(latencies) / len(latencies)
+        else:
+            avg_latency = float('inf')  # Aucun paquet reçu, latence infinie
+
         results.append(avg_latency)
         print(f"Latence moyenne : {avg_latency:.4f} s")
         time.sleep(1)
