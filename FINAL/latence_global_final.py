@@ -38,20 +38,6 @@ def latence(sw_name,ip,win,pg):
 
     # Calcul de la latence moyenne à partir des latences collectées
     average_latency = sum(latencies) / len(latencies) if latencies else 0
-
-    # Fonction pour afficher le graphique des latences et enregistrer dans la base de données
-    def graph():
-        db.insert_in_base(sw_name,average_latency*1000)
-        grph.bargraph(db.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
-
-    # Affichage de la latence moyenne dans l'interface graphique tkinter
-    label = Label(win, text=f"\nLatence moyenne: {average_latency * 1000:.2f} ms", fg="gray")
-    label.place(x=200,y=180)
-    # Création d'un bouton pour afficher le graphique des latences
-    button = Button(win, text="Afficher le graph", width=15, command=graph)
-    button.place(x=520, y=200)
-    # Mise à jour de la fenêtre après ajout du label et du bouton
-    win.update()
     # Affichage de la latence moyenne dans la console
     print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
     # Enregistrement de la latence moyenne dans la base de données
