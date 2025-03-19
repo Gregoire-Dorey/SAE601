@@ -1,5 +1,12 @@
 import sqlite3
+
 def insert_in_base(sw_name,latency,table):
+    if type(sw_name)!=str:
+        sw_name = str(sw_name)
+    if type(latency)!=str:
+        latency = str(latency)
+    if type(table)!=str:
+        table = str(table)
     conn = sqlite3.connect("./db-test.db")
     curs = conn.cursor()
     curs.execute(f"INSERT INTO {table} (switch_name,latence) VALUES (?,?);",(sw_name,latency))
