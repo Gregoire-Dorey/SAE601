@@ -108,7 +108,7 @@ def measure_dhcp_time(interface=None):
                 sendp(dhcp_request, iface=interface, verbose=0)
                 print(f"DHCP REQUEST envoyé pour {dhcp_info['offered_ip']}")
 
-            # DHCP ACK (5)
+            # Réception d'un DHCP ACK
             elif message_type == 5:
                 timing['ack_received'] = time.time()
                 dhcp_info['final_ip'] = packet[BOOTP].yiaddr
