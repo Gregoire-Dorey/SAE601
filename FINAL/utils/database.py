@@ -1,13 +1,13 @@
 import sqlite3
 def insert_in_base(sw_name,latency,table):
-    conn = sqlite3.connect("./utils/db-test.db")
+    conn = sqlite3.connect("./db-test.db")
     curs = conn.cursor()
-    curs.execute(f"INSERT INTO {table} (name,latence) VALUES (?,?);",(sw_name,latency))
+    curs.execute(f"INSERT INTO {table} (switch_name,latence) VALUES (?,?);",(sw_name,latency))
     conn.commit()
     conn.close()
 
 def select_latency(table):
-    conn = sqlite3.connect("./utils/db-test.db")
+    conn = sqlite3.connect("./db-test.db")
     cursor = conn.cursor()
     cursor.execute(f"SELECT name, latence FROM {table};")
     data = cursor.fetchall()
@@ -15,4 +15,4 @@ def select_latency(table):
     return data
 
 
-print(select_latency())
+#print(select_latency())
