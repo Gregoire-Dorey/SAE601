@@ -7,25 +7,28 @@ from scapy.layers.inet import IP, UDP, TCP, ICMP
 # Paramètres du test
 TARGET_IP = "192.168.111.175"  # Adresse IP du switch ou d'un hôte derrière
 PORT = 80  # Port cible pour le trafic TCP/UDP
-PACKETS_PER_PROCESS = 100000  # Nombre de paquets envoyés par process
+PACKETS_PER_PROCESS = 10000  # Nombre de paquets envoyés par process
 NUM_PROCESSES = 5  # Nombre de processus pour générer du trafic en parallèle
 
 
 # Fonction pour envoyer des paquets TCP
 def send_tcp_flood():
     packet = IP(dst=TARGET_IP) / TCP(dport=PORT, flags="S") / Raw(load="TCP TEST")
+    print(packet.summary())
     send(packet, count=PACKETS_PER_PROCESS, inter=0.0001, verbose=False)
 
 
 # Fonction pour envoyer des paquets UDP
 def send_udp_flood():
     packet = IP(dst=TARGET_IP) / UDP(dport=PORT) / Raw(load="UDP TEST")
+    print(packet.summary())
     send(packet, count=PACKETS_PER_PROCESS, inter=0.0001, verbose=False)
 
 
 # Fonction pour envoyer des pings (ICMP)
 def send_icmp_flood():
     packet = IP(dst=TARGET_IP) / ICMP() / Raw(load="PING TEST")
+    print(packet.summary())
     send(packet, count=PACKETS_PER_PROCESS, inter=0.0001, verbose=False)
 
 
