@@ -13,24 +13,17 @@ from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
 
+# Fonction qui mesure le temps nécessaire pour obtenir une adresse IP via DHCP
 def measure_dhcp_time(interface=None):
-    """
-    Mesure le temps nécessaire pour obtenir une adresse IP via DHCP sous Linux.
 
-    Args:
-        interface (str): Interface réseau à utiliser (ex: eth0, wlan0)
-
-    Returns:
-        dict: Résultats contenant les temps pour chaque étape du processus DHCP
-    """
     # Vérifier si l'interface existe
     if interface is None:
         print("Interfaces réseau disponibles:")
         for iface in get_if_list():
+
             # Ignore l'interface loopback
             if iface != "lo":
                 print(f"- {iface}")
-
         print("\nVeuillez spécifier une interface avec l'option -i")
         return None
 
@@ -48,7 +41,7 @@ def measure_dhcp_time(interface=None):
     # Convertir l'adresse MAC en format brut pour le champ BOOTP
     mac_raw = mac_address.replace(':', '')
 
-    # Stockage des temps pour chaque étape
+    # Stockage des temps pour chaque étape  du processus DHCP
     timing = {
         'start': time.time(),
         'discover_sent': None,
@@ -57,7 +50,7 @@ def measure_dhcp_time(interface=None):
         'ack_received': None
     }
 
-    # Stockage des informations DHCP
+    # Stockage des informations DHCP obtenues
     dhcp_info = {
         'offered_ip': None,
         'server_id': None,
@@ -68,10 +61,10 @@ def measure_dhcp_time(interface=None):
         'lease_time': None
     }
 
-    # Générer un identifiant de transaction aléatoire
+    # Générer un identifiant de transaction aléatoire pour le DHCP
     xid_value = random.randint(1, 0xFFFFFFFF)
 
-    # Fonction pour gérer les paquets reçus
+    # Fonction pour gérer les paquets DHCP reçus
     def dhcp_callback(packet):
         if DHCP in packet and packet[BOOTP].xid == xid_value:
             # Extraire le type de message DHCP
@@ -84,7 +77,7 @@ def measure_dhcp_time(interface=None):
             if message_type is None:
                 return
 
-            # DHCP Offer (2)
+            # Réception d'un DHCP Offer
             if message_type == 2 and timing['offer_received'] is None:
                 timing['offer_received'] = time.time()
                 dhcp_info['offered_ip'] = packet[BOOTP].yiaddr
