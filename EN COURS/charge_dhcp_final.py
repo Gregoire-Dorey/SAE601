@@ -19,7 +19,6 @@ def list_network_interfaces():
     for interface in interfaces:
         print(f"- {interface}")
 
-
 # Fonction pour envoyer une requête DHCP DISCOVER
 def send_dhcp_discover(iface, server_ip):
     dhcp_discover = Ether(dst="ff:ff:ff:ff:ff:ff") / IP(src="0.0.0.0", dst=server_ip) / UDP(sport=68, dport=67) / BOOTP(
@@ -27,13 +26,14 @@ def send_dhcp_discover(iface, server_ip):
     sendp(dhcp_discover, iface=iface, verbose=False)
     print(f"Requête DHCP DISCOVER envoyée via {iface} à {server_ip}")
 
-
 # Fonction pour envoyer des requêtes en parallèle pendant une durée donnée
 def send_bulk_dhcp_requests(iface, server_ip, num_requests):
-    # Durée du test définie directement ici, par exemple 100 secondes
-    duration = 100  # **Change cette valeur pour ajuster la durée du test**
 
+    # Durée du test à 100 secondes
+    duration = 100
+    # Heure du début de test
     start_time = time.time()
+    # Liste pour stocker les threads
     threads = []
 
     while time.time() - start_time < duration:
