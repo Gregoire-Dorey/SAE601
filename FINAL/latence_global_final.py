@@ -55,8 +55,4 @@ def latence(sw_name,ip,win,pg):
     # Affichage de la latence moyenne dans la console
     print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
     # Enregistrement de la latence moyenne dans la base de données
-    db.insert_in_base(sw_name,round(average_latency*1000,2))
-    # Affichage du graphique avec les latences dans l'interface graphique
-    grph.bargraph(db.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
-    # Retourner les résultats
-    #return (sw_name,round(average,2))
+    db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
