@@ -37,15 +37,4 @@ def latence(sw_name,ip,win,pg):
 
     # Statistiques de latence
     average_latency = sum(latencies) / len(latencies) if latencies else 0
-    def graph():
-        db.insert_in_base(sw_name,average_latency*1000)
-        grph.bargraph(db.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
-    label = Label(win, text=f"\nLatence moyenne: {average_latency * 1000:.2f} ms", fg="gray")
-    label.place(x=200,y=180)
-    button = Button(win, text="Afficher le graph", width=15, command=graph)
-    button.place(x=520, y=200)
-    win.update()
-    print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
-    db.insert_in_base(sw_name,round(average_latency*1000,2))
-    grph.bargraph(db.select_latency(),"Latence en fonctionement normal","Nom des switch","Latence (en ms)")
-    #return (sw_name,round(average,2))
+    db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
