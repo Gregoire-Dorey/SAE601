@@ -3,12 +3,11 @@
 # --------------------
 
 # Importation des modules nécessaires
-from tkinter import Label, Button
 from scapy.all import *
-import time
 from scapy.layers.inet import IP, ICMP
+
 import utils.database as db
-import utils.graph as grph
+
 
 # Fonction pour mesurer la latence moyenne
 def latence(sw_name,ip,win,pg):
