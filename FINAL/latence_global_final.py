@@ -1,6 +1,6 @@
-# ______________________
+# --------------------
 # TEST DE LATENCE GLOBAL
-# ______________________
+# --------------------
 
 # Importation des modules nécessaires
 from tkinter import Label, Button

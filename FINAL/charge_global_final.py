@@ -1,6 +1,6 @@
-# _____________________
+# --------------------
 # TEST DE CHARGE GLOBAL
-# _____________________
+# --------------------
 
 # Importation des modules nécessaires dont scapy pour forger des paquets
 from scapy.all import *

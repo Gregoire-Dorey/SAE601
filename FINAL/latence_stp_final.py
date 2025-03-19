@@ -1,6 +1,6 @@
-# ___________________
+# --------------------
 # TEST DE LATENCE STP
-# ___________________
+# --------------------
 
 # Importation des modules nécessaires
 from scapy.all import *
