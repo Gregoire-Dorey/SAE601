@@ -57,7 +57,7 @@ class STPTest:
             fwddelay=15  # Forward Delay (en secondes)
         )
         return eth / llc / stp
-
+#test
     def send_bpdu_and_measure(self, i):
         # Envoie un BPDU et mesure le temps de réponse
         bpdu_packet = self.create_bpdu()
