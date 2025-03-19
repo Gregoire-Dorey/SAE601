@@ -16,13 +16,14 @@ TARGET_IP = "192.168.99.200"  # L'adresse IP de votre switch cible
 COUNT = 1000  # Nombre de BPDU à envoyer
 TIMEOUT = 2  # Timeout en secondes
 
+# Fonction pour obtenir les interafces réseaux
 def get_readable_interfaces():
-    """Utilisation de psutil pour obtenir les interfaces réseau sous un format lisible."""
     interfaces = psutil.net_if_addrs()
     readable_interfaces = [iface for iface in interfaces if iface != "lo"]  # Exclure l'interface 'lo' (loopback)
     return readable_interfaces
 
 class STPTest:
+    # Fonction pour initialiser les paramètres de la classe STPTest
     def __init__(self, target_ip, count=1000, timeout=2, iface="eth0"):
         self.target_ip = target_ip
         self.count = count
@@ -36,6 +37,7 @@ class STPTest:
         else:
             print(f"Utilisation de l'interface: {self.iface}")
 
+    # Fonction pour créer un paquet BPDU STP standard
     def create_bpdu(self):
         # Création d'un BPDU STP standard
         eth = Ether(dst="01:80:c2:00:00:00")  # Adresse MAC STP multicast
@@ -57,7 +59,8 @@ class STPTest:
             fwddelay=15  # Forward Delay (en secondes)
         )
         return eth / llc / stp
-#test
+
+    # Fonction pour envoyer le BPDU et mesurer le temps de latence ICMP (ping)
     def send_bpdu_and_measure(self, i):
         # Envoie un BPDU et mesure le temps de réponse
         bpdu_packet = self.create_bpdu()
@@ -67,18 +70,17 @@ class STPTest:
         icmp = ICMP(type=8, code=0, id=i)
         data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" * 2
         ping_packet = ip / icmp / data
-
+        # Marque le début du temps de test
         start_time = time.time()
 
         try:
             # Envoyer d'abord le BPDU pour ajouter de la charge
             sendp(bpdu_packet, iface=self.iface, verbose=0)  # Envoi du BPDU sur l'interface spécifiée
-
             # Puis mesurer la latence avec ICMP
             reply = sr1(ping_packet, timeout=self.timeout, iface=self.iface, verbose=0)  # ICMP Echo
-
+            # Marque la fin du temps de test
             end_time = time.time()
-
+            # Si une réponse est reçue, on mesure la latence
             if reply is not None and reply.haslayer(ICMP) and reply[ICMP].type == 0:
                 latency = (end_time - start_time) * 1000  # en ms
                 return latency
@@ -88,15 +90,15 @@ class STPTest:
 
         return None
 
+    # Fonction pour lancer le test de charge STP
     def run_test(self):
         print(f"Test de charge STP sur {self.target_ip}")
         print(f"Envoi de {self.count} BPDU séquentiellement avec un délai de {self.timeout} secondes")
         print(f"Utilisation de l'interface: {self.iface}")
 
-        # Envoi des BPDUs séquentiellement
+        # Envoi des BPDUs séquentiellement et mesure la latence
         for i in range(self.count):
             latency = self.send_bpdu_and_measure(i)
-
             if latency is not None:
                 self.latencies.append(latency)
                 print(f"Latence pour BPDU {i + 1}: {latency:.2f} ms")
@@ -113,7 +115,7 @@ class STPTest:
             avg_latency = sum(self.latencies) / successful_responses
             median_latency = statistics.median(self.latencies)
             stddev_latency = statistics.stdev(self.latencies) if successful_responses > 1 else 0
-
+            # Affichage des résultats du test
             print("\nRésultats du test:")
             print(f"Paquets envoyés: {self.count}")
             print(f"Réponses reçues: {successful_responses} ({successful_responses / self.count * 100:.2f}%)")
@@ -133,6 +135,7 @@ class STPTest:
         else:
             print("Aucune réponse reçue pendant le test.")
 
+# Fonction permettant de sélectionner l'interface réseau
 def select_interface():
     # Liste des interfaces réseau avec des noms lisibles comme eth0, wlan0
     interfaces = get_readable_interfaces()  # Utilisation de psutil pour obtenir des interfaces réseau lisibles
