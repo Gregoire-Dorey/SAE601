@@ -1,3 +1,7 @@
+# --------------------
+# TEST DE CHARGE GLOBAL
+# --------------------
+
 from scapy.all import *
 import time
 
