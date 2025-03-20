@@ -10,7 +10,7 @@ import utils.database as db
 
 
 # Fonction pour mesurer la latence moyenne
-def latence(sw_name,ip,win,pg):
+def latence(sw_name,ip):
     # Adresse IP du switch (assume que le switch a une interface de gestion ou répond au ping)
     ip_switch = ip
     # Nombre de trames à envoyer
@@ -27,8 +27,6 @@ def latence(sw_name,ip,win,pg):
         if response:
             latency = end_time - start_time
             latencies.append(latency)
-            pg.step(0.09)
-            win.update()
             print(f"Trame {i + 1}: Latence = {latency * 1000:.2f} ms")
         # Si aucune réponse, on considère une latence par défaut de 1 seconde
         else:
@@ -41,3 +39,5 @@ def latence(sw_name,ip,win,pg):
     print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
     # Enregistrement de la latence moyenne dans la base de données
     db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
+
+latence()
