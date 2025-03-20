@@ -3,10 +3,7 @@
 # --------------------
 
 # Importation des modules nécessaires
-import argparse
 import psutil
-import threading
-import time
 from scapy.all import *
 from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP

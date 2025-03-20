@@ -1,5 +1,7 @@
 import argparse
 import csv
+from statistics import mean
+
 import matplotlib.pyplot as plt
 from scapy.all import *
 from scapy.layers.dhcp import BOOTP, DHCP
@@ -94,7 +96,7 @@ def benchmark_dhcp(iface, num_clients, duration, save_csv, graphs):
         results.append(avg_latency)
         print(f"🔹 Latence moyenne : {avg_latency:.4f} s")
         time.sleep(1)
-    db.insert_in_base(SW_NAME,avg_latency,"dhcp_latence")
+    db.insert_in_base(SW_NAME,round(mean(results),2),"dhcp_latence")
     if save_csv:
         save_results_to_csv(results)
     if graphs:

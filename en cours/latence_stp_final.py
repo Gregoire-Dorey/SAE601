@@ -10,13 +10,13 @@ import os
 import psutil  # Utilisation de psutil pour obtenir des noms d'interfaces lisibles
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import Ether, LLC, STP
-import FINAL.utils.database as db
+import final.utils.database as db
 
 # Paramètres du test
-TARGET_IP = "192.168.99.200"  # L'adresse IP de votre switch cible
+TARGET_IP = "192.168.99.203"  # L'adresse IP de votre switch cible
 COUNT = 1000  # Nombre de BPDU à envoyer
 TIMEOUT = 2  # Timeout en secondes
-SW_NAME = ""
+SW_NAME = "2960X-POE"
 
 # Fonction pour obtenir les interafces réseaux
 def get_readable_interfaces():
