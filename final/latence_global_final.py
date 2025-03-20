@@ -40,4 +40,4 @@ def latence(sw_name,ip):
     # Enregistrement de la latence moyenne dans la base de données
     db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
 
-latence("2960X-POE","192.168.99.10")
+latence("2960X-POE","192.168.99.203")
