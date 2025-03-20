@@ -12,6 +12,9 @@ import os
 from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
+import FINAL.utils.database as db
+
+SW_NAME = ""
 
 # Fonction qui mesure le temps nécessaire pour obtenir une adresse IP via DHCP
 def measure_dhcp_time(interface=None):
@@ -222,6 +225,7 @@ if __name__ == "__main__":
             print(f"Routeur: {results['router']}")
             print(f"Serveurs DNS: {results['dns']}")
             print(f"Durée du bail: {results['lease_time']} secondes")
+            db.insert_in_base(SW_NAME,results['total_time'],"dhcp_latence")
     except Exception as e:
         print(f"Erreur lors de l'exécution du script: {str(e)}")
         print("Des problèmes courants peuvent être:")
