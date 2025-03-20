@@ -12,9 +12,9 @@ import os
 from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
-import FINAL.utils.database as db
+import final.utils.database as db
 
-SW_NAME = ""
+SW_NAME = "2960X-POE"
 
 # Fonction qui mesure le temps nécessaire pour obtenir une adresse IP via DHCP
 def measure_dhcp_time(interface=None):
