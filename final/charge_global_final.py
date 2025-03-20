@@ -8,7 +8,7 @@ import time
 from scapy.layers.inet import TCP, UDP, ICMP, IP
 
 # Paramètres du test
-TARGET_IP = "192.168.99.8"  # Adresse IP du switch ou d'un hôte derrière
+TARGET_IP = "192.168.99.203"  # Adresse IP du switch ou d'un hôte derrière
 PORT = 80  # Port cible pour le trafic TCP/UDP
 PACKETS = 10000  # Nombre total de paquets à envoyer
 
