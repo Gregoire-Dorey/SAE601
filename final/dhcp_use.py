@@ -8,9 +8,9 @@ from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
 import datetime
-import final.database as db
+import database as db
 
-SW_NAME = ""
+SW_NAME = "3650"
 
 # Vérification de Windows et chargement de la bonne fonction pour les interfaces
 if os.name == 'nt':

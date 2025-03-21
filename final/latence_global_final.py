@@ -6,7 +6,7 @@
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP
 
-import final.database as db
+import database as db
 
 
 # Fonction pour mesurer la latence moyenne
@@ -40,4 +40,4 @@ def latence(sw_name,ip):
     # Enregistrement de la latence moyenne dans la base de données
     db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
 
-latence("2960X-POE","192.168.99.203")
+latence("3650","192.168.99.206")
