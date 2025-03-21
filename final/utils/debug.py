@@ -1,3 +1,3 @@
-import database as db
+import final.database as db
 
-db.select_latency("latence")
+print(db.select_latency("latence"))

@@ -10,7 +10,7 @@ import os
 import psutil  # Utilisation de psutil pour obtenir des noms d'interfaces lisibles
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import Ether, LLC, STP
-import final.utils.database as db
+import database as db
 
 # Paramètres du test
 TARGET_IP = "192.168.99.203"  # L'adresse IP de votre switch cible

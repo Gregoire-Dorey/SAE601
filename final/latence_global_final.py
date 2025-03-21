@@ -6,7 +6,7 @@
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP
 
-import utils.database as db
+import final.database as db
 
 
 # Fonction pour mesurer la latence moyenne
