@@ -11,7 +11,7 @@ def insert_in_base(sw_name,latency,table):
         table = str(table)
     date = dt.datetime.now()
     date = date.strftime("%d/%m/%Y-%H:%M:%S")
-    conn = sqlite3.connect("db-metrics.db")
+    conn = sqlite3.connect("C:/Users/onedr/Documents/GitHub/SAE601/final/db-metrics.db")
     curs = conn.cursor()
     curs.execute(f"INSERT INTO {table} (switch_name,latence,date) VALUES (?,?,?);",(sw_name,latency,date))
     conn.commit()
