@@ -13,10 +13,10 @@ from scapy.layers.l2 import Ether, LLC, STP
 import database as db
 
 # Paramètres du test
-TARGET_IP = "192.168.99.206"  # L'adresse IP de votre switch cible
+TARGET_IP = "192.168.99.209"  # L'adresse IP de votre switch cible
 COUNT = 1000  # Nombre de BPDU à envoyer
 TIMEOUT = 2  # Timeout en secondes
-SW_NAME = "3650"
+SW_NAME = "3560"
 
 # Fonction pour obtenir les interafces réseaux
 def get_readable_interfaces():
