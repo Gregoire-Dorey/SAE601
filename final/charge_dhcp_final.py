@@ -8,6 +8,7 @@ from scapy.all import *
 from scapy.layers.dhcp import BOOTP, DHCP
 from scapy.layers.inet import IP, UDP
 from scapy.layers.l2 import Ether
+SW_NAME = ""
 
 # Fonction pour afficher la liste des interfaces réseau disponibles
 def list_network_interfaces():
