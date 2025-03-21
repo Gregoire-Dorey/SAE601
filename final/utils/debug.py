@@ -1,3 +1,3 @@
-import database
+import database as db
 
-database.insert_in_base("2960","23","dhcp_latence")
+db.select_latency("latence")
