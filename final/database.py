@@ -11,14 +11,14 @@ def insert_in_base(sw_name,latency,table):
         table = str(table)
     date = dt.datetime.now()
     date = date.strftime("%d/%m/%Y-%H:%M:%S")
-    conn = sqlite3.connect("db-metrics.db")
+    conn = sqlite3.connect("C:/Users/adminetu/PycharmProjects/SAE601/final/db-metrics.db")
     curs = conn.cursor()
     curs.execute(f"INSERT INTO {table} (switch_name,latence,date) VALUES (?,?,?);",(sw_name,latency,date))
     conn.commit()
     conn.close()
 
 def select_latency(table):
-    conn = sqlite3.connect("db-metrics.db")
+    conn = sqlite3.connect("C:/Users/adminetu/PycharmProjects/SAE601/final/db-metrics.db")
     cursor = conn.cursor()
     cursor.execute(f"SELECT switch_name, latence FROM {table};")
     data = cursor.fetchall()
