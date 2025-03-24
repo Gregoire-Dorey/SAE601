@@ -32,7 +32,7 @@ def latence_routeur(router_name, ip):
     print(f"\n📊 Latence moyenne vers le routeur {router_name}: {average_latency * 1000:.2f} ms")
 
     # Insertion en base (ex: table des tests réseau)
-    #db.insert_in_base(router_name, round(average_latency * 1000, 2), "latence")
+    db.insert_in_base_router(router_name, round(average_latency * 1000, 2), "router_latence")
 
 # Exemple d’appel
 latence_routeur("2801", "192.168.99.228")

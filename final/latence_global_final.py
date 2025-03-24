@@ -38,6 +38,6 @@ def latence(sw_name,ip):
     # Affichage de la latence moyenne dans la console
     print(f"\nLatence moyenne: {average_latency * 1000:.2f} ms")
     # Enregistrement de la latence moyenne dans la base de données
-    db.insert_in_base(sw_name,round(average_latency*1000,2),"latence")
+    db.insert_in_base(sw_name,round(average_latency*1000,2),"mt_latence")
 
-latence("9300","192.168.99.2")
+latence("9300","192.168.99.5")

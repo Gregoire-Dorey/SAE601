@@ -37,7 +37,7 @@ def insert_in_base_router(router_name,latency,table):
     date = date.strftime("%d/%m/%Y-%H:%M:%S")
     conn = sqlite3.connect("C:/Users/adminetu/PycharmProjects/SAE601/final/db-metrics.db")
     curs = conn.cursor()
-    curs.execute(f"INSERT INTO {table} (switch_name,latence,date) VALUES (?,?,?);",(router_name,latency,date))
+    curs.execute(f"INSERT INTO {table} (router_name,latence,date) VALUES (?,?,?);",(router_name,latency,date))
     conn.commit()
     conn.close()
 
