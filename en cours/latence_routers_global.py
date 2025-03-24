@@ -1,106 +1,38 @@
-import subprocess
+# --------------------
+# TEST DE LATENCE ROUTEUR
+# --------------------
+
+from scapy.all import *
+from scapy.layers.inet import IP, ICMP
 import time
-import os
-import socket
+import final.database as db
 
-TARGET_IP = "192.168.99.228"
-TCP_PORT = 80
-UDP_PORT = 5005
-PING_INTERVAL = 1  # secondes
+# Fonction pour mesurer la latence vers un routeur Cisco
+def latence_routeur(router_name, ip):
+    ip_routeur = "192.168.99.228"
+    num_trames = 100
+    latencies = []
 
-latencies_icmp = []
-latencies_tcp = []
-latencies_udp = []
+    print(f"🔍 Début du test de latence vers le routeur {router_name} ({ip_routeur})")
 
-# --------- ICMP Ping ---------
-def get_ping_latency(ip):
-    try:
-        if os.name == "nt":  # Windows
-            command = ["ping", "-n", "1", "-w", "1000", ip]
-        else:  # Linux/Mac
-            command = ["ping", "-c", "1", "-W", "1", ip]
+    for i in range(num_trames):
+        start_time = time.time()
+        response = sr1(IP(dst=ip_routeur) / ICMP(), timeout=1, verbose=0)
+        end_time = time.time()
 
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        if result.returncode == 0:
-            output = result.stdout
-            if "time=" in output:
-                latency = output.split("time=")[1].split(" ")[0]
-                return float(latency)
-            elif "temps=" in output:
-                latency = output.split("temps=")[1].split(" ")[0]
-                return float(latency)
-    except Exception as e:
-        print(f"Erreur ICMP : {e}")
-    return None
+        if response:
+            latency = end_time - start_time
+            latencies.append(latency)
+            print(f"Trame {i + 1}: Latence = {latency * 1000:.2f} ms")
+        else:
+            latencies.append(1)
+            print(f"Trame {i + 1}: ❌ Pas de réponse, latence fixée à 1s")
 
-# --------- TCP Connect ---------
-def get_tcp_latency(ip, port):
-    try:
-        start = time.time()
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        sock.connect((ip, port))
-        sock.close()
-        return (time.time() - start) * 1000
-    except:
-        return None
+    average_latency = sum(latencies) / len(latencies) if latencies else 0
+    print(f"\n📊 Latence moyenne vers le routeur {router_name}: {average_latency * 1000:.2f} ms")
 
-# --------- UDP RTT (nécessite un serveur UDP echo côté cible) ---------
-def get_udp_latency(ip, port):
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(2)
-        message = b"ping"
-        start = time.time()
-        sock.sendto(message, (ip, port))
-        data, _ = sock.recvfrom(1024)
-        end = time.time()
-        return (end - start) * 1000
-    except:
-        return None
-    finally:
-        sock.close()
+    # Insertion en base (ex: table des tests réseau)
+    #db.insert_in_base(router_name, round(average_latency * 1000, 2), "latence")
 
-# --------- Main ---------
-if __name__ == "__main__":
-    print(f"Mesure de latence vers {TARGET_IP} toutes les {PING_INTERVAL}s. Ctrl+C pour arrêter.")
-    try:
-        while True:
-            print("----")
-            # ICMP
-            latency_icmp = get_ping_latency(TARGET_IP)
-            if latency_icmp is not None:
-                latencies_icmp.append(latency_icmp)
-                print(f"ICMP ping     : {latency_icmp:.2f} ms")
-            else:
-                print("ICMP ping     : No response")
-
-            # TCP
-            latency_tcp = get_tcp_latency(TARGET_IP, TCP_PORT)
-            if latency_tcp is not None:
-                latencies_tcp.append(latency_tcp)
-                print(f"TCP connect   : {latency_tcp:.2f} ms")
-            else:
-                print("TCP connect   : Failed/Timeout")
-
-            # UDP
-            latency_udp = get_udp_latency(TARGET_IP, UDP_PORT)
-            if latency_udp is not None:
-                latencies_udp.append(latency_udp)
-                print(f"UDP RTT       : {latency_udp:.2f} ms")
-            else:
-                print("UDP RTT       : No response")
-
-            time.sleep(PING_INTERVAL)
-
-    except KeyboardInterrupt:
-        print("\nArrêt du programme.")
-        if latencies_icmp:
-            avg_icmp = sum(latencies_icmp) / len(latencies_icmp)
-            print(f"Moyenne ICMP : {avg_icmp:.2f} ms ({len(latencies_icmp)} mesures)")
-        if latencies_tcp:
-            avg_tcp = sum(latencies_tcp) / len(latencies_tcp)
-            print(f"Moyenne TCP  : {avg_tcp:.2f} ms ({len(latencies_tcp)} mesures)")
-        if latencies_udp:
-            avg_udp = sum(latencies_udp) / len(latencies_udp)
-            print(f"Moyenne UDP  : {avg_udp:.2f} ms ({len(latencies_udp)} mesures)")
+# Exemple d’appel
+latence_routeur("2801", "192.168.99.228")

