@@ -10,7 +10,7 @@ import final.database as db
 # Fonction pour mesurer la latence vers un routeur Cisco
 def latence_routeur(router_name, ip):
     ip_routeur = "192.168.99.228"
-    num_trames = 100
+    num_trames = 500
     latencies = []
 
     print(f"🔍 Début du test de latence vers le routeur {router_name} ({ip_routeur})")
