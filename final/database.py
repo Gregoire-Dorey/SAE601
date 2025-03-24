@@ -28,7 +28,7 @@ def select_latency(table):
 
 def insert_in_base_router(router_name,latency,table):
     if type(router_name)!=str:
-        sw_name = str(router_name)
+        router_name = str(router_name)
     if type(latency)!=str:
         latency = str(latency)
     if type(table)!=str:
