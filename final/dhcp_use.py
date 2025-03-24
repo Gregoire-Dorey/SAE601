@@ -9,7 +9,7 @@ from scapy.layers.l2 import Ether
 import datetime
 import database as db
 
-SW_NAME = "3560"
+SW_NAME = "9200-charge"
 
 # Vérification de Windows et chargement de la bonne fonction pour les interfaces
 if os.name == 'nt':
