@@ -35,4 +35,4 @@ def latence_routeur(router_name, ip):
     db.insert_in_base_router(router_name, round(average_latency * 1000, 2), "router_latence")
 
 # Exemple d’appel
-latence_routeur("2801", "192.168.99.228")
+latence_routeur("1803-charge", "192.168.99.228")
