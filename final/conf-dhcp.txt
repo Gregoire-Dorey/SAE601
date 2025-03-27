@@ -1,0 +1,23 @@
+Switch>enable
+Switch#configure terminal
+
+# Exclure certaines adresses IP du pool DHCP
+Switch(config)#ip dhcp excluded-address 192.168.99.1 192.168.99.10
+Switch(config)#ip dhcp excluded-address 192.168.99.200 192.168.99.254
+
+# Création du pool DHCP
+Switch(config)#ip dhcp pool TEST
+Switch(dhcp-config)#network 192.168.99.0 255.255.255.0
+Switch(dhcp-config)#dns-server 8.8.8.8
+Switch(dhcp-config)#default-router 192.168.99.1
+Switch(dhcp-config)#exit
+
+# Configuration de l'interface VLAN 1 avec une adresse IP
+Switch(config)#interface Vlan1
+Switch(config-if)#ip address 192.168.99.2 255.255.255.0
+Switch(config-if)#no ip route-cache
+Switch(config-if)#no shutdown
+Switch(config-if)#exit
+
+Switch(config)#exit
+Switch#write memory
